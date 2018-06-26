@@ -1,6 +1,9 @@
 <?php
 /**
  * Class that manage taxonomy admin columns.
+ *
+ * @package    Meta Box
+ * @subpackage MB Admin Columns
  */
 
 /**
@@ -14,12 +17,9 @@ class MB_Admin_Columns_Taxonomy extends MB_Admin_Columns_Base {
 		$priority = 20;
 		add_filter( "manage_edit-{$this->object_type}_columns", array( $this, 'columns' ), $priority );
 		add_filter( "manage_{$this->object_type}_custom_column", array( $this, 'show' ), $priority, 3 );
-		add_filter( "manage_edit-{$this->object_type}_sortable_columns", array(
-			$this,
-			'sortable_columns'
-		), $priority );
+		add_filter( "manage_edit-{$this->object_type}_sortable_columns", array( $this, 'sortable_columns' ), $priority );
 
-		// Other actions need to run only in Management page
+		// Other actions need to run only in Management page.
 		add_action( 'load-edit-tags.php', array( $this, 'execute' ) );
 	}
 
@@ -32,15 +32,18 @@ class MB_Admin_Columns_Taxonomy extends MB_Admin_Columns_Base {
 		}
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
-		add_filter( 'get_terms_args', array( $this, 'filter' ), 10, 2 );
+
+		// Sorting by meta value works unexpectedly.
+		// @codingStandardsIgnoreLine
+		// add_filter( 'get_terms_args', array( $this, 'sort' ) );
 	}
 
 	/**
 	 * Show column content.
 	 *
-	 * @param string $output Output of the custom column.
-	 * @param string $column Column ID.
-	 * @param int $term_id Term ID.
+	 * @param string $output  Output of the custom column.
+	 * @param string $column  Column ID.
+	 * @param int    $term_id Term ID.
 	 *
 	 * @return string
 	 */
@@ -62,7 +65,7 @@ class MB_Admin_Columns_Taxonomy extends MB_Admin_Columns_Base {
 			$field['type'],
 			$field['id'],
 			$config['before'],
-			get_term_meta( $term_id, $field['id'], true ),
+			rwmb_the_value( $field['id'], array( 'object_type' => 'term' ), $term_id, false ),
 			$config['after']
 		);
 	}
@@ -74,16 +77,15 @@ class MB_Admin_Columns_Taxonomy extends MB_Admin_Columns_Base {
 	 *
 	 * @return array
 	 */
-	public function filter( $args ) {
+	public function sort( $args ) {
 		$field_id = (string) filter_input( INPUT_GET, 'orderby' );
+
 		if ( ! $field_id || false === ( $field = $this->find_field( $field_id ) ) ) {
 			return $args;
 		}
-		$args['orderby']  = in_array( $field['type'], array(
-			'number',
-			'slider',
-			'range'
-		) ) ? 'meta_value_num' : 'meta_value';
+
+		$args['orderby']  = in_array( $field['type'], array( 'number', 'slider', 'range' ), true ) ? 'meta_value_num' : 'meta_value';
+		// @codingStandardsIgnoreLine
 		$args['meta_key'] = $field_id;
 
 		return $args;
@@ -91,9 +93,10 @@ class MB_Admin_Columns_Taxonomy extends MB_Admin_Columns_Base {
 
 	/**
 	 * Check if we in right page in admin area.
+	 *
 	 * @return bool
 	 */
 	private function is_screen() {
-		return $this->object_type == get_current_screen()->taxonomy;
+		return get_current_screen()->taxonomy === $this->object_type;
 	}
 }

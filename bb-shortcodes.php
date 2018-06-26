@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder Shortcodes
 Plugin URI:  https://beaverlodgehq.com/downloads/beaver-builder-shortcodes
 Description: Displays template shortcode in the template dashboard.
-Version:     1.0.0
+Version:     1.1.0
 Author:      West Coast Digital
 Author URI:  https://westcoastdigital.com.au
 Text Domain: bb-shortcode
@@ -19,11 +19,11 @@ function wcd_edit_template_columns() {
 add_action( 'admin_init', 'wcd_edit_template_columns', 20 );
 
 if ( ! class_exists( 'RW_Meta_Box' ) ) {
-    require_once 'assets/meta-box/meta-box.php';
+    require_once( plugin_dir_path( __FILE__ ) . 'assets/meta-box/meta-box.php' );
 }
 
 if ( ! class_exists( 'MB_Admin_Columns' ) ) {
-    require_once 'assets/mb-admin-columns/mb-admin-columns.php';
+    require_once( plugin_dir_path( __FILE__ ) . 'assets/mb-admin-columns/mb-admin-columns.php' );
 }
 
 require_once 'lib/tinymce.php';
@@ -39,7 +39,7 @@ define( 'BB_SHORTCODE_MODULE_URL', plugins_url( '/', __FILE__ ) );
 
 function wcd_template_module() {
     if ( class_exists( 'FLBuilder' ) ) {
-        require_once '/lib/shortcode-module/shortcode-module.php';
+        require_once( plugin_dir_path( __FILE__ ) . 'lib/shortcode-module/shortcode-module.php' );
     }
 }
 add_action( 'init', 'wcd_template_module' );

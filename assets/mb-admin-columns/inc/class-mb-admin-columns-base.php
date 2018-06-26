@@ -1,6 +1,9 @@
 <?php
 /**
  * Base class that manage admin columns.
+ *
+ * @package    Meta Box
+ * @subpackage MB Admin Columns
  */
 
 /**
@@ -9,12 +12,14 @@
 abstract class MB_Admin_Columns_Base {
 	/**
 	 * Object type, should be post type for posts or taxonomy for terms.
+	 *
 	 * @var string
 	 */
 	protected $object_type;
 
 	/**
 	 * List of fields for the object type.
+	 *
 	 * @var array
 	 */
 	protected $fields;
@@ -22,8 +27,8 @@ abstract class MB_Admin_Columns_Base {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $object_type Post type
-	 * @param array $fields List of fields
+	 * @param string $object_type Object type.
+	 * @param array  $fields      List of fields.
 	 */
 	public function __construct( $object_type, $fields ) {
 		$this->object_type = $object_type;
@@ -48,7 +53,7 @@ abstract class MB_Admin_Columns_Base {
 	/**
 	 * Get list of columns.
 	 *
-	 * @param array $columns Default WordPress columns
+	 * @param array $columns Default WordPress columns.
 	 *
 	 * @return array
 	 */
@@ -56,20 +61,20 @@ abstract class MB_Admin_Columns_Base {
 		foreach ( $this->fields as $field ) {
 			$config = $field['admin_columns'];
 
-			// Just show this column
+			// Just show this column.
 			if ( true === $config ) {
 				$this->add( $columns, $field['id'], $field['name'] );
 				continue;
 			}
 
-			// If position is specified
+			// If position is specified.
 			if ( is_string( $config ) ) {
 				$config = strtolower( $config );
 				list( $position, $target ) = array_map( 'trim', explode( ' ', $config . ' ' ) );
 				$this->add( $columns, $field['id'], $field['name'], $position, $target );
 			}
 
-			// If an array of configuration is specified
+			// If an array of configuration is specified.
 			if ( is_array( $config ) ) {
 				$config = wp_parse_args( $config, array(
 					'position' => '',
@@ -84,9 +89,9 @@ abstract class MB_Admin_Columns_Base {
 	}
 
 	/**
-	 * Make columns sortable
+	 * Make columns sortable.
 	 *
-	 * @param array $columns
+	 * @param array $columns List of columns.
 	 *
 	 * @return array
 	 */
@@ -103,27 +108,26 @@ abstract class MB_Admin_Columns_Base {
 	/**
 	 * Add a new column
 	 *
-	 * @param array $columns Array of columns
-	 * @param string $id New column ID
-	 * @param string $title New column title
-	 * @param string $position New column position. Empty to not specify the position. Could be 'before', 'after' or 'replace'
-	 * @param string $target The target column. Used with combination with $position
+	 * @param array  $columns  Array of columns.
+	 * @param string $id       New column ID.
+	 * @param string $title    New column title.
+	 * @param string $position New column position. Empty to not specify the position. Could be 'before', 'after' or 'replace'.
+	 * @param string $target   The target column. Used with combination with $position.
 	 */
 	protected function add( &$columns, $id, $title, $position = '', $target = '' ) {
-		// Just add new column
+		// Just add new column.
 		if ( ! $position ) {
 			$columns[ $id ] = $title;
 
 			return;
 		}
 
-		// Add new column in a specific position
+		// Add new column in a specific position.
 		$new = array();
 		switch ( $position ) {
-			// Replace
 			case 'replace':
 				foreach ( $columns as $key => $value ) {
-					if ( $key == $target ) {
+					if ( $key === $target ) {
 						$new[ $id ] = $title;
 					} else {
 						$new[ $key ] = $value;
@@ -132,7 +136,7 @@ abstract class MB_Admin_Columns_Base {
 				break;
 			case 'before':
 				foreach ( $columns as $key => $value ) {
-					if ( $key == $target ) {
+					if ( $key === $target ) {
 						$new[ $id ] = $title;
 					}
 					$new[ $key ] = $value;
@@ -141,7 +145,7 @@ abstract class MB_Admin_Columns_Base {
 			case 'after':
 				foreach ( $columns as $key => $value ) {
 					$new[ $key ] = $value;
-					if ( $key == $target ) {
+					if ( $key === $target ) {
 						$new[ $id ] = $title;
 					}
 				}
@@ -153,9 +157,9 @@ abstract class MB_Admin_Columns_Base {
 	}
 
 	/**
-	 * Find field by ID
+	 * Find field by ID.
 	 *
-	 * @param string $field_id
+	 * @param string $field_id Field ID.
 	 *
 	 * @return array|bool False if not found. Array of field parameters if found.
 	 */
@@ -163,5 +167,29 @@ abstract class MB_Admin_Columns_Base {
 		$fields = wp_list_filter( $this->fields, array( 'id' => $field_id ) );
 
 		return empty( $fields ) ? false : reset( $fields );
+	}
+
+	/**
+	 * Check if meta box has at least a searchable field.
+	 *
+	 * @return boolean
+	 */
+	protected function has_searchable_field() {
+		$fields = $this->fields;
+
+		$found = false;
+
+		foreach ( $fields as $field ) {
+			if ( empty( $field['admin_columns'] ) ) {
+				continue;
+			}
+
+			if ( ! empty( $field['admin_columns']['searchable'] ) ) {
+				$found = true;
+				break;
+			}
+		}
+
+		return $found;
 	}
 }

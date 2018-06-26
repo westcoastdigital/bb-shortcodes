@@ -3,12 +3,15 @@
  * Plugin Name: MB Admin Columns
  * Plugin URI: https://metabox.io/plugins/mb-admin-columns/
  * Description: Show custom fields in the post list table.
- * Version: 1.0.2
- * Author: Rilwis
- * Author URI: http://www.deluxeblogtips.com
+ * Version: 1.3.0
+ * Author: MetaBox.io
+ * Author URI: https://metabox.io
  * License: GPL2+
  * Text Domain: mb-admin-columns
- * Domain Path: /lang/
+ * Domain Path: /languages/
+ *
+ * @package    Meta Box
+ * @subpackage MB Admin Columns
  */
 
 // Prevent loading this file directly.
@@ -36,28 +39,31 @@ if ( ! class_exists( 'MB_Admin_Columns' ) ) {
 				return;
 			}
 
-			require_once dirname( __FILE__ ) . '/inc/base.php';
-			require_once dirname( __FILE__ ) . '/inc/post.php';
-//			require dirname( __FILE__ ) . '/inc/taxonomy.php';
+			require_once dirname( __FILE__ ) . '/inc/class-mb-admin-columns-base.php';
+			require_once dirname( __FILE__ ) . '/inc/class-mb-admin-columns-post.php';
+			require_once dirname( __FILE__ ) . '/inc/class-mb-admin-columns-taxonomy.php';
+			require_once dirname( __FILE__ ) . '/inc/class-mb-admin-columns-user.php';
 
 			$this->posts();
-//			$this->taxonomies();
+			$this->taxonomies();
+			$this->users();
 		}
 
 		/**
 		 * Add admin columns for posts.
 		 */
 		protected function posts() {
-			$meta_boxes = RWMB_Core::get_meta_boxes();
-			$meta_boxes = array_map( array( 'RW_Meta_Box', 'normalize' ), $meta_boxes );
+			$meta_boxes = rwmb_get_registry( 'meta_box' )->get_by( array(
+				'object_type' => 'post',
+			) );
 
 			foreach ( $meta_boxes as $meta_box ) {
-				$fields = $this->get_fields( $meta_box );
+				$fields = array_filter( $meta_box->fields, array( $this, 'has_admin_columns' ) );
 				if ( empty( $fields ) ) {
 					continue;
 				}
 
-				foreach ( $meta_box['post_types'] as $post_type ) {
+				foreach ( $meta_box->post_types as $post_type ) {
 					new MB_Admin_Columns_Post( $post_type, $fields );
 				}
 			}
@@ -67,37 +73,49 @@ if ( ! class_exists( 'MB_Admin_Columns' ) ) {
 		 * Add admin columns for terms.
 		 */
 		protected function taxonomies() {
-			foreach ( MB_Term_Meta_Loader::$meta_boxes as $meta_box ) {
-				$fields = $this->get_fields( $meta_box );
+			$meta_boxes = rwmb_get_registry( 'meta_box' )->get_by( array(
+				'object_type' => 'term',
+			) );
+			foreach ( $meta_boxes as $meta_box ) {
+				$fields = array_filter( $meta_box->fields, array( $this, 'has_admin_columns' ) );
 				if ( empty( $fields ) ) {
 					continue;
 				}
 
-				$taxonomies = (array) $meta_box['taxonomies'];
-				foreach ( $taxonomies as $taxonomy ) {
+				foreach ( $meta_box->taxonomies as $taxonomy ) {
 					new MB_Admin_Columns_Taxonomy( $taxonomy, $fields );
 				}
 			}
 		}
 
 		/**
-		 * Get meta box fields.
-		 *
-		 * @param $meta_box
-		 *
-		 * @return array
+		 * Add admin columns for users.
 		 */
-		protected function get_fields( $meta_box ) {
-			$fields = array();
-			foreach ( $meta_box['fields'] as $field ) {
-				if ( isset( $field['admin_columns'] ) ) {
-					$fields[] = $field;
+		protected function users() {
+			$meta_boxes = rwmb_get_registry( 'meta_box' )->get_by( array(
+				'object_type' => 'user',
+			) );
+			foreach ( $meta_boxes as $meta_box ) {
+				$fields = array_filter( $meta_box->fields, array( $this, 'has_admin_columns' ) );
+				if ( empty( $fields ) ) {
+					continue;
 				}
-			}
 
-			return $fields;
+				new MB_Admin_Columns_User( 'user', $fields );
+			}
+		}
+
+		/**
+		 * Check if field has admin columns.
+		 *
+		 * @param array $field Field configuration.
+		 *
+		 * @return bool
+		 */
+		protected function has_admin_columns( $field ) {
+			return ! empty( $field['admin_columns'] );
 		}
 	}
 
 	new MB_Admin_Columns;
-}
+} // End if().
